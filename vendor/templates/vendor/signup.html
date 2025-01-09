@@ -1,0 +1,14 @@
+{% extends 'vendor/base.html' %}
+
+{% block title %}Vendor Signup{% endblock %}
+
+{% block content %}
+<h1>Sign Up as a Vendor</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Sign Up</button>
+</form>
+
+{% endblock %}

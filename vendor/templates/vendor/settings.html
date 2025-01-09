@@ -1,0 +1,25 @@
+<!-- templates/vendor/settings.html -->
+
+{% extends 'vendor/base.html' %}
+
+{% block title %}Vendor Settings{% endblock %}
+
+{% block content %}
+<h1>Vendor Settings</h1>
+<form method="post">
+    {% csrf_token %}
+    <div>
+        <label for="{{ form.gift_card_enabled.id_for_label }}">Enable Gift Cards:</label>
+        {{ form.gift_card_enabled }}
+    </div>
+    <div>
+        <label for="{{ form.party_booking_enabled.id_for_label }}">Enable Party Bookings:</label>
+        {{ form.party_booking_enabled }}
+    </div>
+    <div>
+        <label for="{{ form.event_enabled.id_for_label }}">Enable Events:</label>
+        {{ form.event_enabled }}
+    </div>
+    <button type="submit">Save Settings</button>
+</form>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'vendor/base.html' %}
+
+{% block title %}Vendor Dashboard{% endblock %}
+
+{% block content %}
+<h1>Welcome, {{ vendor.business_name }}</h1>
+
+<section>
+    <h2>Your Listings</h2>
+    <ul>
+        <li><a href="{% url 'manage_items' 'giftcard' %}">Manage Gift Cards</a></li>
+        <li><a href="{% url 'manage_items' 'giftcardpromotion' %}">Manage Promotions</a></li>
+        <li><a href="{% url 'manage_items' 'partybooking' %}">Manage Party Bookings</a></li>
+        <li><a href="{% url 'manage_items' 'event' %}">Manage Events</a></li>
+    </ul>
+</section>
+
+<section>
+    <h2>Quick Stats</h2>
+    <p>Gift Cards: {{ gift_cards.count }}</p>
+    <p>Promotions: {{ promotions.count }}</p>
+    <p>Bookings: {{ bookings.count }}</p>
+    <p>Events: {{ events.count }}</p>
+</section>
+
+{% endblock %}

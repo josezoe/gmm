@@ -1,0 +1,9 @@
+Validation: Added a clean method to ensure that total_value is not less than price for both GiftCard and GiftCardPromotion. This will raise a ValidationError if the condition is not met, which you should handle in your forms or wherever the model is saved.
+GiftCardPromotion: This new model includes start_date and end_date to define the promotion's validity period. The clean method also checks that the end date is after the start date.
+Unlimited Expiry for GiftCard: Since you specified that the expiry date for the standard GiftCard is unlimited, we didn't include an expiry date field. If you ever decide to add an optional expiry, you can introduce an expiration_date field with null=True and blank=True.
+ForeignKey Relationship: GiftCardPromotion has a ForeignKey to GiftCard, allowing multiple promotions for a single gift card.
+Tax Calculation: Added methods to compute tax based on whether it's included in the base price or not. The tax rate is retrieved from the associated TaxSetting of the vendor.
+Processing Fee: A simple method is provided to calculate a processing fee. In reality, this might depend on various factors like payment methods, transaction amount, etc., so you'd need to adjust this based on your actual fee structure.
+Total Price Calculation: A method get_total_price() calculates the sum of base price (or promotional price), tax, and processing fee.
+Promotion Handling: In GiftCardPromotion, similar methods are added but they work with the promotional price. 
+Tax Inclusion: The tax_included flag allows for scenarios where tax is already included in the price, which is common in some jurisdictions.
