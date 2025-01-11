@@ -1,8 +1,13 @@
-
 from django.contrib import admin
-from .models import GiftCard, GiftCardPromotion, PartyBooking, Event,Vendor
-from core.models import State
+from django.utils.html import format_html
+from django import forms
+from taggit.models import Tag
+from .models import GiftCard, GiftCardPromotion, PartyBooking, Event, Vendor, Category, Photo
+from taggit.forms import TagWidget
+from django.contrib.contenttypes.admin import GenericTabularInline
 
+
+# Vendor Admin
 @admin.register(Vendor)
 class VendorAdmin(admin.ModelAdmin):
     list_display = ('business_name', 'user', 'is_approved', 'country')
@@ -11,59 +16,65 @@ class VendorAdmin(admin.ModelAdmin):
     @admin.action(description='Approve selected vendors')
     def approve_vendors(self, request, queryset):
         queryset.update(is_approved=True)
+
     actions = [approve_vendors]
 
+# Photo Inline 
+class PhotoInline(GenericTabularInline):
+    model = Photo
+    extra = 1  # Number of empty photo forms to display
 
-
-
+# GiftCard Admin
 @admin.register(GiftCard)
 class GiftCardAdmin(admin.ModelAdmin):
     list_display = ('name', 'vendor', 'base_price', 'total_value', 'is_active', 'state')
     list_filter = ('vendor', 'is_active', 'state')
+    inlines = [PhotoInline]
 
-    @admin.action(description='Activate/Deactivate based on state')
-    def toggle_active_by_state(self, request, queryset):
-        state_id = request.POST.get('state_id')
-        if state_id:
-            state = State.objects.get(id=state_id)
-            for obj in queryset:
-                obj.is_active = obj.state == state
-                obj.save()
-        else:
-            self.message_user(request, "Please select a state.")
-    toggle_active_by_state.short_description = "Activate/Deactivate based on state"
-
-    def get_actions(self, request):
-        actions = super().get_actions(request)
-        if 'toggle_active_by_state' in actions:
-            actions['toggle_active_by_state']['extra_context'] = {
-                'states': State.objects.all(),
-            }
-        return actions
-
-    def changelist_view(self, request, extra_context=None):
-        extra_context = extra_context or {}
-        if 'action' in request.POST and request.POST['action'] == 'toggle_active_by_state':
-            extra_context['states'] = State.objects.all()
-        return super().changelist_view(request, extra_context=extra_context)
-
-# Similar changes for GiftCardPromotion, PartyBooking, and Event:
-
+# GiftCardPromotion Admin
 @admin.register(GiftCardPromotion)
 class GiftCardPromotionAdmin(admin.ModelAdmin):
     list_display = ('name', 'promotional_price', 'total_value', 'is_active', 'start_date', 'end_date', 'state')
     list_filter = ('vendor', 'is_active', 'start_date', 'end_date', 'state')
-
-    def vendor(self, obj):
-        return obj.gift_card.vendor
-    vendor.short_description = 'Vendor'  # This sets the column header in admin
-    
+   
+# PartyBooking Admin
 @admin.register(PartyBooking)
-class PartyBookingAdmin(GiftCardAdmin):
+class PartyBookingAdmin(admin.ModelAdmin):
     list_display = ('name', 'vendor', 'customer', 'booking_date', 'start_time', 'end_time', 'guests_count', 'is_active', 'state')
     list_filter = ('vendor', 'booking_date', 'is_active', 'state')
+    inlines = [PhotoInline]
 
+# Event Form (for handling tags)
+class EventForm(forms.ModelForm):
+    class Meta:
+        model = Event
+        fields = '__all__'
+        widgets = {
+            'tags': TagWidget,  # Use the TagWidget provided by taggit
+        }
+
+
+
+# Event Admin
 @admin.register(Event)
-class EventAdmin(GiftCardAdmin):
-    list_display = ('name', 'vendor', 'event_date', 'start_time', 'end_time', 'capacity', 'tickets_available', 'is_active', 'state')
-    list_filter = ('vendor', 'event_date', 'is_active', 'state')
+class EventAdmin(admin.ModelAdmin):
+    form = EventForm  # Use the custom form
+    list_display = ('name', 'event_date', 'vendor', 'display_image')
+    readonly_fields = ('display_image', 'slug', 'phone_number', 'state')  # Make the image display read-only
+    filter_horizontal = ('categories',)  # Only include categories here
+    inlines = [PhotoInline]  # Add the PhotoInline for managing photos
+
+    def display_image(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" width="150" height="auto" />', obj.image.url)
+        return "No Image"
+
+    display_image.short_description = 'Image Preview'
+
+# Category Admin
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug')
+    prepopulated_fields = {"slug": ("name",)}
+
+

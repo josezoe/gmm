@@ -2,7 +2,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import login, authenticate, logout
-from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import PermissionDenied
 from rest_framework import viewsets, permissions
 from rest_framework.response import Response
@@ -12,46 +11,19 @@ from .forms import GiftCardForm, GiftCardPromotionForm, PartyBookingForm, EventF
 from .serializers import GiftCardSerializer, GiftCardPromotionSerializer, PartyBookingSerializer, EventSerializer, CategorySerializer, PhotoSerializer, ReviewSerializer
 from core.models import CustomUser, State, Country
 import logging
-from .forms import VendorSettingsForm
-
+from django.views.decorators.csrf import csrf_exempt  # remove for production
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+from .forms import GiftCardForm, GiftCardPromotionForm, PartyBookingForm, EventForm, CategoryForm, PhotoForm, ReviewForm, VendorSignupForm, VendorProfileForm, VendorSettingsForm
+from django.core.exceptions import ValidationError
 # vendor/views.py
 
-# vendor/views.py
-
-'''def vendor_signup(request):
-    if request.method == 'POST':
-        form = VendorSignupForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, "Your account has been created! Awaiting approval.")
-            return redirect('vendor_login')  # Redirect to login, but login won't work without approval
-    else:
-        form = VendorSignupForm()
-    return render(request, 'vendor/signup.html', {'form': form})
-
-# vendor/views.py
-logger = logging.getLogger(__name__)
-
-def vendor_login(request):
-    if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            if hasattr(user, 'vendor') and user.vendor.is_approved:
-                login(request, user)
-                messages.success(request, 'Login successful!')
-                logger.info(f"Login successful for user {user.username}. Redirecting to dashboard.")
-                print("Attempting to redirect to dashboard")
-                return redirect('vendor_dashboard')  # or wherever approved vendors go
-            elif hasattr(user, 'vendor') and not user.vendor.is_approved:
-                messages.error(request, 'Your account is awaiting approval.')
-            else:
-                messages.error(request, 'You are not registered as a vendor.')
-        else:
-            messages.error(request, 'Invalid login credentials.')
-    return render(request, 'vendor/login.html')'''
+@login_required
+def toggle_event_status(request, event_id):
+    event = get_object_or_404(Event, id=event_id, vendor=request.user)
+    event.is_active = not event.is_active
+    event.save()
+    return HttpResponseRedirect(reverse('event_list'))
 
 def vendor_signup(request):
     if request.method == 'POST':
@@ -80,7 +52,6 @@ def vendor_login(request):
             return render(request, 'vendor/login.html')  # Return here if authentication fails
     else:
         return render(request, 'vendor/login.html')  
-
 
 def vendor_logout(request):
     logout(request)
@@ -201,3 +172,128 @@ class VendorSettingsViewSet(viewsets.ViewSet):
             return Response({'error': 'Invalid model name'}, status=400)
         
         return self.update_active_status(request, model, pk)
+
+@csrf_exempt
+@login_required
+def create_gift_card(request):
+    if request.method == 'POST':
+        form = GiftCardForm(request.POST, request.FILES)
+        if form.is_valid():
+            gift_card = form.save(commit=False)
+            gift_card.vendor = request.user.vendor
+            gift_card.save()
+            
+            # Handle multiple file uploads
+            for f in request.FILES.getlist('photos'):
+                Photo.objects.create(image=f, gift_card=gift_card)
+            
+            form.save_m2m()  # Save the many-to-many data
+            return redirect('some_success_url')  # Replace with your success URL
+    else:
+        form = GiftCardForm()
+    
+    return render(request, 'vendor/create_gift_card.html', {'form': form})
+
+@csrf_exempt
+@login_required
+def create_gift_card_promotion(request):
+    if request.method == 'POST':
+        form = GiftCardPromotionForm(request.POST, request.FILES)
+        if form.is_valid():
+            promotion = form.save(commit=False)
+            promotion.vendor = request.user.vendor
+            promotion.save()
+            form.save_m2m()  # Save M2M fields like tags, categories, photos
+            messages.success(request, "Gift card promotion created successfully.")
+            return redirect('manage_gift_card_promotions')  # Redirect to where you list promotions
+    else:
+        form = GiftCardPromotionForm()
+    return render(request, 'vendor/create_gift_card_promotion.html', {'form': form})
+
+
+#events
+
+
+@login_required
+def create_event(request):
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                event = form.save(commit=False)
+                vendor = Vendor.objects.get(user=request.user)
+                event.vendor = vendor
+                event.save()
+                return redirect('manage_items', item_type='event')
+            except ValidationError as e:
+                # Pass validation errors to the form
+                form.add_error(None, e)
+    else:
+        form = EventForm()
+    return render(request, 'vendor/event_form.html', {'form': form})
+
+@login_required
+def event_list(request):
+    events = Event.objects.all()  # Fetch all events from the database
+    return render(request, 'vendor/event_list.html', {'events': events})
+
+@login_required
+def update_event(request, pk):
+    event = get_object_or_404(Event, pk=pk)
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES, instance=event)
+        if form.is_valid():
+            try:
+                form.save()
+                return redirect('manage_items', item_type='event')
+            except ValidationError as e:
+                # Pass validation errors to the form
+                form.add_error(None, e)
+    else:
+        form = EventForm(instance=event)
+    return render(request, 'vendor/event_form.html', {'form': form})
+
+@login_required
+def delete_event(request, pk):
+    event = get_object_or_404(Event, pk=pk)
+    if request.method == 'POST':
+        event.delete()
+        return redirect('event_list')
+    return render(request, 'vendor/event_confirm_delete.html', {'event': event})
+
+@login_required
+def event_detail(request, slug):  # Use slug instead of pk
+    event = get_object_or_404(Event, slug=slug)  # Fetch the event by its slug
+    return render(request, 'vendor/event_detail.html', {'event': event})
+
+
+@login_required
+def event_detail(request, slug):  # Use slug instead of pk
+    event = get_object_or_404(Event, slug=slug)  # Fetch the event by its slug
+    return render(request, 'vendor/event_detail.html', {'event': event})
+
+
+# manage 
+
+
+def manage_items(request, item_type):
+    context = {}
+    
+    if item_type == 'giftcard':
+        items = GiftCard.objects.filter(vendor=request.user.vendor)
+        template = 'vendor/manage_giftcards.html'
+    elif item_type == 'giftcardpromotion':
+        items = GiftCardPromotion.objects.filter(vendor=request.user.vendor)
+        template = 'vendor/manage_promotions.html'
+    elif item_type == 'partybooking':
+        items = PartyBooking.objects.filter(vendor=request.user.vendor)
+        template = 'vendor/manage_bookings.html'
+    elif item_type == 'event':
+        items = Event.objects.filter(vendor=request.user.vendor)
+        template = 'vendor/manage_events.html'
+    else:
+        # Handle invalid item types
+        return render(request, 'vendor/error.html', {'message': 'Invalid item type'})
+    
+    context['items'] = items
+    return render(request, template, context)

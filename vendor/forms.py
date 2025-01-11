@@ -3,6 +3,11 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, User
 from .models import Vendor, BaseItem, GiftCard, GiftCardPromotion, PartyBooking, Event, Category, Photo, Review, CustomUser
 from core.models import CustomUser
 from core.models import Country
+from django.db import models
+from django.forms.widgets import ClearableFileInput
+
+class MultipleClearableFileInput(ClearableFileInput):
+    allow_multiple_selected = True
 
 class VendorSignupForm(UserCreationForm):
     business_name = forms.CharField(max_length=100)
@@ -18,15 +23,18 @@ class VendorSignupForm(UserCreationForm):
         user.user_type = 'vendor'
         if commit:
             user.save()
-        vendor = Vendor.objects.create(user=user, 
+        vendor=Vendor.objects.create(user=user, 
                                        business_name=self.cleaned_data['business_name'], 
                                        phone=self.cleaned_data['phone'],
+                                       country=self.cleaned_data['country'],
                                        is_approved=False)
         return user
 
 
 class VendorLoginForm(AuthenticationForm):
     pass
+
+
 
 class VendorSettingsForm(forms.ModelForm):
     class Meta:
@@ -69,26 +77,69 @@ class BaseItemForm(forms.ModelForm):
     class Meta:
         model = BaseItem
         fields = ['name', 'description', 'slug', 'is_active']
+ 
 
-class GiftCardForm(BaseItemForm):
-    class Meta(BaseItemForm.Meta):
+class GiftCardForm(forms.ModelForm):
+    categories = forms.ModelMultipleChoiceField(
+        queryset=Category.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
+   
+    
+    class Meta:
         model = GiftCard
-        fields = BaseItemForm.Meta.fields + ['base_price', 'total_value', 'stock', 'tax_included']
+        fields = ['name', 'description', 'base_price', 'total_value', 'stock', 'tax_included', 'conditions', 'photos', 'categories']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.id is None:  # For new objects
+            default_category = Category.objects.filter(name='Restaurant').first()
+            if default_category:
+                self.fields['categories'].initial = [default_category.id]
+            
 
 class GiftCardPromotionForm(GiftCardForm):
-    class Meta(GiftCardForm.Meta):
+    class Meta:
         model = GiftCardPromotion
-        fields = GiftCardForm.Meta.fields + ['promotional_price', 'start_date', 'end_date']
+        fields = ['name', 'description', 'promotional_price', 'total_value', 'stock', 'tax_included', 'conditions', 'photos', 'categories', 'tags', 'start_date', 'end_date']
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('end_date') <= cleaned_data.get('start_date'):
+            raise forms.ValidationError('End date must be after the start date.')
 
 class PartyBookingForm(BaseItemForm):
     class Meta(BaseItemForm.Meta):
         model = PartyBooking
         fields = BaseItemForm.Meta.fields + ['booking_date', 'start_time', 'end_time', 'min_guests', 'max_guests', 'guests_count']
 
-class EventForm(BaseItemForm):
-    class Meta(BaseItemForm.Meta):
+class EventForm(forms.ModelForm):
+    class Meta:
         model = Event
-        fields = BaseItemForm.Meta.fields + ['event_date', 'start_time', 'end_time', 'capacity', 'tickets_available', 'price_per_ticket']
+        fields = [
+            'name',
+            'description',
+            'event_date',
+            'end_date', 
+            'start_time',
+            'end_time',
+            'total_capacity',
+            'available_tickets',
+            'price_per_ticket',
+            'address',
+            'phone_number',
+            
+            'terms_and_conditions',
+            'is_active',  # Add active/inactive toggle
+        ]
+        widgets = {
+            'event_date': forms.DateInput(attrs={'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'type': 'date'}),
+            'start_time': forms.TimeInput(attrs={'type': 'time'}),
+            'end_time': forms.TimeInput(attrs={'type': 'time'}),
+        }
+
 
 class CategoryForm(forms.ModelForm):
     class Meta:

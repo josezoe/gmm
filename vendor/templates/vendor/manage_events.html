@@ -1,0 +1,38 @@
+<!-- templates/vendor/manage_events.html -->
+{% extends 'vendor/base.html' %}
+
+{% block title %}Manage Events - Vendor Portal{% endblock %}
+
+{% block content %}
+<h1>Manage Events</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for event in items %}
+        <tr>
+            <td>
+                <!-- Link to event detail page using the slug -->
+                <a href="{% url 'event_detail' event.slug %}" target="_blank">{{ event.name }}</a>
+            </td>
+            <td>{{ event.event_date }}</td>
+            <td>{{ event.end_date }}</td>
+            <td>
+                <a href="{% url 'update_event' event.pk %}">Edit</a>
+                <a href="{% url 'delete_event' event.pk %}">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'create_event' %}">Create New Event</a>
+<a href="{% url 'vendor_dashboard' %}">Back to Dashboard</a>
+{% endblock %}

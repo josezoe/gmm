@@ -1,0 +1,29 @@
+<!-- templates/vendor/event_form.html -->
+{% extends 'vendor/base.html' %}
+
+{% block title %}{% if form.instance.pk %}Update Event{% else %}Create Event{% endif %} - Vendor Portal{% endblock %}
+
+{% block content %}
+<h1>{% if form.instance.pk %}Update Event{% else %}Create Event{% endif %}</h1>
+
+<!-- Display form errors -->
+{% if form.errors %}
+    <div class="alert alert-danger">
+        <strong>Error:</strong> Please correct the errors below.
+        <ul>
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    <li>{{ field|title }}: {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+    <a href="{% url 'manage_items' 'event' %}">Cancel</a>
+</form>
+{% endblock %}

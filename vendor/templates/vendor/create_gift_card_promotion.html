@@ -1,0 +1,13 @@
+<!-- vendor/templates/vendor/create_gift_card_promotion.html -->
+{% extends 'vendor/base.html' %}
+
+{% block title %}Create Gift Card{% endblock %}
+
+{% block content %}
+<h1>Create Gift Card Promotion</h1>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Create</button>
+</form>
+{% endblock %}

@@ -1,0 +1,21 @@
+<!-- templates/vendor/event_detail.html -->
+{% extends 'vendor/base.html' %}
+
+{% block title %}{{ event.name }} - Vendor Portal{% endblock %}
+
+{% block content %}
+<h1>{{ event.name }}</h1>
+<p>{{ event.description }}</p>
+<p><strong>Start Date:</strong> {{ event.event_date }}</p>
+<p><strong>End Date:</strong> {{ event.end_date }}</p>
+<p><strong>Start Time:</strong> {{ event.start_time }}</p>
+<p><strong>End Time:</strong> {{ event.end_time }}</p>
+<p><strong>Address:</strong> {{ event.address }}</p>
+<p><strong>Phone Number:</strong> {{ event.phone_number }}</p>
+<p><strong>Price per Ticket:</strong> {{ event.price_per_ticket }}</p>
+<p><strong>Available Tickets:</strong> {{ event.available_tickets }}</p>
+<p><strong>Total Capacity:</strong> {{ event.total_capacity }}</p>
+<p><strong>Terms and Conditions:</strong> {{ event.terms_and_conditions }}</p>
+<p><strong>Active:</strong> {{ event.is_active|yesno:"Yes,No" }}</p>
+<a href="{% url 'manage_items' 'event' %}">Back to Manage Events</a>
+{% endblock %}

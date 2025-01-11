@@ -1,0 +1,13 @@
+<!-- templates/event_confirm_delete.html -->
+{% extends 'vendor/base.html' %}
+
+{% block title %}Delete Event - Vendor Portal{% endblock %}
+
+{% block content %}
+<h1>Are you sure you want to delete "{{ event.name }}"?</h1>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Yes, delete</button>
+    <a href="{% url 'event_list' %}">Cancel</a>
+</form>
+{% endblock %}

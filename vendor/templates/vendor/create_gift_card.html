@@ -1,0 +1,15 @@
+<!-- vendor/templates/vendor/create_gift_card.html -->
+{% extends 'vendor/base.html' %}
+
+{% block title %}Create Gift Card{% endblock %}
+
+{% block content %}
+<!-- In your create_gift_card.html template -->
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <!-- If you're rendering fields manually, make sure it allows multiple files -->
+    <!-- <input type="file" name="photos" multiple> -->
+    <button type="submit">Create Gift Card</button>
+</form>
+{% endblock %}

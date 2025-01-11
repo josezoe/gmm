@@ -1,3 +1,5 @@
+<!-- templates/vendor/base.html -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,10 +12,18 @@
 <body>
     <header>
         <nav>
-            <a href="{% url 'vendor_dashboard' %}">Dashboard</a>
-            <a href="{% url 'vendor_profile' %}">Profile</a>
-            <a href="{% url 'vendor_settings' %}">Settings</a>
-            <a href="{% url 'logout' %}">Logout</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'vendor_dashboard' %}">Dashboard</a>
+                <a href="{% url 'vendor_profile' %}">Profile</a>
+                <a href="{% url 'vendor_settings' %}">Settings</a>
+                <a href="{% url 'create_gift_card' %}">Create Gift Card</a>
+                <a href="{% url 'create_gift_card_promotion' %}">Create Gift Card Promotion</a>
+                <a href="{% url 'create_event' %}">Create Event</a>
+                <a href="{% url 'logout' %}">Logout</a>
+            {% else %}
+                <a href="{% url 'vendor_login' %}">Login</a>
+                <a href="{% url 'vendor_signup' %}">Sign Up</a>
+            {% endif %}
         </nav>
     </header>
 
@@ -23,7 +33,7 @@
     </main>
 
     <footer>
-        <p>&copy; 2023 Multi-Vendor E-commerce Platform</p>
+        <p>© 2023 Multi-Vendor E-commerce Platform</p>
     </footer>
 </body>
 </html>

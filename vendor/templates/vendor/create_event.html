@@ -1,0 +1,15 @@
+{% extends "vendor/base.html" %}
+
+{% block title %}Create Event{% endblock %}
+
+{% block content %}
+<h1>Create Event</h1>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div>
+        {{ form.as_p }}
+    </div>
+    <button type="submit">Create Event</button>
+</form>
+{% endblock %}
